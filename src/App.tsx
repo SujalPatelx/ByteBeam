@@ -44,7 +44,7 @@ function App() {
 
   const createChunks = (data: Uint8Array, size: number): Uint8Array[] => {
     const chunks: Uint8Array[] = [];
-    for (let i = 0; i <= data.length; i += size) {
+    for (let i = 0; i < data.length; i += size) {
       const chunk = data.slice(i, i + size);
       chunks.push(chunk);
     }
