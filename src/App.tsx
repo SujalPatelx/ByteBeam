@@ -1,10 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import qrcode from "qrcode";
 import "./App.css";
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
   const [qrCodes, setQrCodes] = useState<string[]>([]);
+  const [currentQR, setCurrentQR] = useState<number>(0);
+
+  useEffect(() => {
+    if (qrCodes.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentQR((prev) => (prev + 1) % qrCodes.length);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [qrCodes]);
 
   interface FilePacket {
     fileId: string;
@@ -28,7 +39,7 @@ function App() {
       fileType: file.type,
       chunkIndex,
       totalChunks,
-      data: Unit8ArrayToBinary(data),
+      data: Unit8ArrayToBase64(data),
     };
   };
 
@@ -51,7 +62,7 @@ function App() {
     return chunks;
   };
 
-  const Unit8ArrayToBinary = (bytes: Uint8Array): string => {
+  const Unit8ArrayToBase64 = (bytes: Uint8Array): string => {
     let binary = "";
 
     for (const byte of bytes) {
@@ -91,16 +102,18 @@ function App() {
         packets.push(packet);
       }
       console.log("Packets Array : ", packets);
+
+      const qrCodeArray: string[] = [];
       for (let i = 0; i < packets.length; i++) {
         let jsonData = JSON.stringify(packets[i]);
         console.log(jsonData);
         console.log(i);
 
         const qr = await qrcode.toDataURL(jsonData).then((url) => {
-          qrCodes.push(url);
+          qrCodeArray.push(url);
         });
       }
-      console.log(qrCodes);
+      setQrCodes(qrCodeArray);
     }
   };
 
@@ -116,13 +129,11 @@ function App() {
           <h3>File Type : {file.type}</h3>
         </div>
       )}
+
       <div>
-        {qrCodes.map((qr, index) => (
-          <div key={index}>
-            <h3>QR {index + 1}</h3>
-            <img src={qr} alt={`QR ${index + 1}`} width={200} />
-          </div>
-        ))}
+        {qrCodes.length > 0 && (
+          <img src={qrCodes[currentQR]} alt="qr" width={500} />
+        )}
       </div>
     </div>
   );
